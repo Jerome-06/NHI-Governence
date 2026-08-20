@@ -1,0 +1,31 @@
+[
+  {
+    "account_id": "svc-invoice-bot-prod",
+    "type": "service_account",
+    "agent": "Invoice Processing Agent",
+    "purpose": "Invoice Processing",
+    "permissions": [
+      "read:invoices",
+      "write:payments",
+      "approve:payments"
+    ]
+  },
+  {
+    "account_id": "api-reporting-bot",
+    "type": "api_key",
+    "agent": "Reporting Agent",
+    "purpose": "Generate Reports",
+    "permissions": [
+      "read:reports"
+    ]
+  },
+  {
+    "account_id": "svc-orphan-bot",
+    "type": "service_account",
+    "agent": null,
+    "purpose": "Unknown",
+    "permissions": [
+      "read:invoices"
+    ]
+  }
+]

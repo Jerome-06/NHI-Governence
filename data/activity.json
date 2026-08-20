@@ -1,0 +1,26 @@
+[
+  {
+    "account_id": "svc-invoice-bot-prod",
+    "timestamp": "2026-08-10T09:01:00Z",
+    "action": "read",
+    "resource": "invoices"
+  },
+  {
+    "account_id": "svc-invoice-bot-prod",
+    "timestamp": "2026-08-10T09:05:00Z",
+    "action": "write",
+    "resource": "payments"
+  },
+  {
+    "account_id": "api-reporting-bot",
+    "timestamp": "2026-08-10T10:15:00Z",
+    "action": "read",
+    "resource": "reports"
+  },
+  {
+    "account_id": "svc-orphan-bot",
+    "timestamp": "2026-08-10T11:30:00Z",
+    "action": "read",
+    "resource": "invoices"
+  }
+]
