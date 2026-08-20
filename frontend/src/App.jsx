@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react"
+import "./App.css"
 
 function App() {
-  const [message, setMessage] = useState("Loading...")
+  const [message, setMessage] = useState("Connecting...")
   const [directoryFile, setDirectoryFile] = useState(null)
   const [activityFile, setActivityFile] = useState(null)
   const [ingestStatus, setIngestStatus] = useState("")
@@ -52,11 +53,11 @@ function App() {
       }
 
       setIngestStatus(
-        `Success! Ingested ${data.identities_inserted} identities and ${data.activities_inserted} activities.`
+        `Success — ingested ${data.identities_inserted} identities and ${data.activities_inserted} activities.`
       )
 
       loadIdentities()
-      setSelectedDetail(null) // clear old selection after a new scan
+      setSelectedDetail(null)
     } catch (error) {
       setIngestStatus("Error: " + error.message)
     }
@@ -78,51 +79,60 @@ function App() {
   }
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: "800px" }}>
-      <h1>NHI Governance Dashboard</h1>
-      <p style={{ color: "#666" }}>Backend status: {message}</p>
-
-      <h2>Identity Discovery</h2>
-
-      <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-        <div style={{ border: "1px dashed #999", padding: "1rem", flex: 1 }}>
-          <p>Directory JSON</p>
-          <input
-            type="file"
-            accept=".json"
-            onChange={(e) => setDirectoryFile(e.target.files[0])}
-          />
-          {directoryFile && <p style={{ fontSize: "12px", color: "green" }}>Selected: {directoryFile.name}</p>}
-        </div>
-
-        <div style={{ border: "1px dashed #999", padding: "1rem", flex: 1 }}>
-          <p>Activity JSON</p>
-          <input
-            type="file"
-            accept=".json"
-            onChange={(e) => setActivityFile(e.target.files[0])}
-          />
-          {activityFile && <p style={{ fontSize: "12px", color: "green" }}>Selected: {activityFile.name}</p>}
+    <div className="app">
+      <div className="app-header">
+        <h1 className="app-title">🛡️ NHI Governance Dashboard</h1>
+        <div className="status-badge">
+          <span className="status-dot"></span>
+          {message}
         </div>
       </div>
 
-      <button style={{ padding: "0.5rem 1rem" }} onClick={handleScan}>
-        Run Discovery Scan
-      </button>
+      <div className="card">
+        <h2>Identity Discovery</h2>
+        <p className="card-subtitle">Upload directory and activity JSON to scan for identities</p>
 
-      {ingestStatus && <p style={{ marginTop: "1rem" }}>{ingestStatus}</p>}
+        <div className="upload-grid">
+          <div className="upload-box">
+            <p className="upload-label">directory.json</p>
+            <input
+              type="file"
+              accept=".json"
+              onChange={(e) => setDirectoryFile(e.target.files[0])}
+            />
+            {directoryFile && <p className="upload-selected">✓ {directoryFile.name}</p>}
+          </div>
+
+          <div className="upload-box">
+            <p className="upload-label">activity.json</p>
+            <input
+              type="file"
+              accept=".json"
+              onChange={(e) => setActivityFile(e.target.files[0])}
+            />
+            {activityFile && <p className="upload-selected">✓ {activityFile.name}</p>}
+          </div>
+        </div>
+
+        <button className="btn-primary" onClick={handleScan}>
+          Run Discovery Scan
+        </button>
+
+        {ingestStatus && <div className="ingest-status">{ingestStatus}</div>}
+      </div>
 
       {identities.length > 0 && (
-        <>
-          <h2 style={{ marginTop: "2rem" }}>Identity Register</h2>
-          <p style={{ fontSize: "13px", color: "#666" }}>Click a row to view its risk analysis</p>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="card">
+          <h2>Identity Register</h2>
+          <p className="card-subtitle">Click a row to view its risk analysis</p>
+
+          <table className="identity-table">
             <thead>
-              <tr style={{ background: "#f0f0f0", textAlign: "left" }}>
-                <th style={{ padding: "8px", border: "1px solid #ddd" }}>Account ID</th>
-                <th style={{ padding: "8px", border: "1px solid #ddd" }}>Type</th>
-                <th style={{ padding: "8px", border: "1px solid #ddd" }}>Assigned Agent</th>
-                <th style={{ padding: "8px", border: "1px solid #ddd" }}>Status</th>
+              <tr>
+                <th>Account ID</th>
+                <th>Type</th>
+                <th>Assigned Agent</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -130,132 +140,82 @@ function App() {
                 <tr
                   key={identity.account_id}
                   onClick={() => handleSelectIdentity(identity.account_id)}
-                  style={{ cursor: "pointer" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f9f9f9")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+                  className={selectedDetail?.identity?.account_id === identity.account_id ? "selected-row" : ""}
                 >
-                  <td style={{ padding: "8px", border: "1px solid #ddd", fontFamily: "monospace" }}>
-                    {identity.account_id}
+                  <td className="account-id">{identity.account_id}</td>
+                  <td>{identity.type}</td>
+                  <td>
+                    {identity.agent || <span className="badge-muted">None</span>}
                   </td>
-                  <td style={{ padding: "8px", border: "1px solid #ddd" }}>{identity.type}</td>
-                  <td style={{ padding: "8px", border: "1px solid #ddd" }}>
-                    {identity.agent || <span style={{ color: "#999" }}>None</span>}
-                  </td>
-                  <td style={{ padding: "8px", border: "1px solid #ddd" }}>
+                  <td>
                     {identity.agent === null ? (
-                      <span style={{ background: "#fee", color: "#c00", padding: "2px 8px", borderRadius: "4px", fontSize: "12px" }}>
-                        ⚠ Orphan
-                      </span>
+                      <span className="badge badge-danger">⚠ Orphan</span>
                     ) : (
-                      <span style={{ background: "#efe", color: "#080", padding: "2px 8px", borderRadius: "4px", fontSize: "12px" }}>
-                        Assigned
-                      </span>
+                      <span className="badge badge-success">Assigned</span>
                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </>
+        </div>
       )}
 
-      {detailLoading && <p style={{ marginTop: "2rem" }}>Loading risk analysis...</p>}
+      {detailLoading && <div className="card">Loading risk analysis...</div>}
 
       {selectedDetail && (
-        <div style={{ marginTop: "2rem" }}>
+        <div className="card">
           <h2>Risk Analysis</h2>
-          <p style={{ color: "#666" }}>
-            Selected identity: <code>{selectedDetail.identity.account_id}</code>
+          <p className="card-subtitle">
+            Selected identity: <code className="account-id">{selectedDetail.identity.account_id}</code>
           </p>
 
-          {/* Alert banners */}
           {selectedDetail.risks.map((risk, index) => (
-            <div
-              key={index}
-              style={{
-                background: risk.severity === "High" ? "#fee" : "#fff8e6",
-                border: `1px solid ${risk.severity === "High" ? "#f99" : "#e6c200"}`,
-                borderRadius: "6px",
-                padding: "0.75rem 1rem",
-                marginBottom: "8px",
-              }}
-            >
-              <p style={{ fontWeight: "bold", margin: 0, color: risk.severity === "High" ? "#c00" : "#a66a00" }}>
-                {risk.risk_type} ({risk.severity})
-              </p>
-              <p style={{ fontSize: "13px", margin: "4px 0 0", color: risk.severity === "High" ? "#c00" : "#a66a00" }}>
-                {risk.reason}
-              </p>
+            <div key={index} className={`alert ${risk.severity === "High" ? "alert-high" : "alert-medium"}`}>
+              <p className="alert-title">{risk.risk_type} · {risk.severity}</p>
+              <p className="alert-reason">{risk.reason}</p>
             </div>
           ))}
 
           {selectedDetail.risks.length === 0 && (
-            <div style={{ background: "#efe", border: "1px solid #9c9", borderRadius: "6px", padding: "0.75rem 1rem", marginBottom: "8px" }}>
-              <p style={{ margin: 0, color: "#080" }}>✅ No risks found for this identity.</p>
-            </div>
+            <div className="alert-clean">✅ No risks found for this identity.</div>
           )}
 
-          {/* Granted vs Used */}
-          <h3 style={{ marginTop: "1.5rem" }}>Permissions: Granted vs Used</h3>
-          <div style={{ display: "flex", gap: "1rem" }}>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: "12px", color: "#666" }}>Granted</p>
+          <p className="section-title">Permissions — Granted vs Used</p>
+          <div className="perm-columns">
+            <div>
+              <p className="perm-col-label">Granted</p>
               {selectedDetail.granted_permissions.map((perm) => {
                 const isUsed = selectedDetail.used_permissions.includes(perm)
                 return (
-                  <div
-                    key={perm}
-                    style={{
-                      fontFamily: "monospace",
-                      fontSize: "12px",
-                      background: isUsed ? "#f0f0f0" : "#fff8e6",
-                      padding: "6px 10px",
-                      borderRadius: "4px",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    {perm} {!isUsed && <span style={{ color: "#a66a00" }}>(unused)</span>}
+                  <div key={perm} className={`perm-pill ${isUsed ? "granted-used" : "granted-unused"}`}>
+                    {perm} {!isUsed && "(unused)"}
                   </div>
                 )
               })}
             </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontSize: "12px", color: "#666" }}>Used (last 30 days)</p>
+            <div>
+              <p className="perm-col-label">Used (last 30 days)</p>
               {selectedDetail.used_permissions.length > 0 ? (
                 selectedDetail.used_permissions.map((perm) => (
-                  <div
-                    key={perm}
-                    style={{
-                      fontFamily: "monospace",
-                      fontSize: "12px",
-                      background: "#efe",
-                      padding: "6px 10px",
-                      borderRadius: "4px",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    {perm}
-                  </div>
+                  <div key={perm} className="perm-pill used">{perm}</div>
                 ))
               ) : (
-                <p style={{ fontSize: "12px", color: "#999" }}>— none —</p>
+                <p className="badge-muted" style={{ fontSize: "12px" }}>— none —</p>
               )}
             </div>
           </div>
 
-          {/* Activity Timeline */}
-          <h3 style={{ marginTop: "1.5rem" }}>Activity Timeline</h3>
+          <p className="section-title">Activity Timeline</p>
           {selectedDetail.activity_timeline.length > 0 ? (
             selectedDetail.activity_timeline.map((event, index) => (
-              <div key={index} style={{ fontSize: "13px", marginBottom: "4px" }}>
-                <span style={{ fontFamily: "monospace", color: "#999", marginRight: "8px" }}>
-                  {new Date(event.timestamp).toLocaleString()}
-                </span>
-                {event.action} <code>{event.resource}</code>
+              <div key={index} className="timeline-item">
+                <span className="timeline-time">{new Date(event.timestamp).toLocaleString()}</span>
+                <span>{event.action} <span className="timeline-resource">{event.resource}</span></span>
               </div>
             ))
           ) : (
-            <p style={{ fontSize: "13px", color: "#999" }}>No activity recorded.</p>
+            <p className="badge-muted" style={{ fontSize: "13px" }}>No activity recorded.</p>
           )}
         </div>
       )}

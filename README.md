@@ -1,149 +1,105 @@
-# 🐼 Pandas Mastery — Data Analysis with Python
+# NHI Governance Dashboard
 
-![Python](https://img.shields.io/badge/Python-3.x-blue?style=flat&logo=python&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-Data%20Analysis-150458?style=flat&logo=pandas&logoColor=white)
-![Status](https://img.shields.io/badge/Status-In%20Progress-orange?style=flat)
-![Role](https://img.shields.io/badge/Goal-Data%20Scientist%20%7C%20Analyst-green?style=flat)
+A web application for discovering, evaluating, and monitoring the security posture of non-human identities (NHIs) — API keys and service accounts used by AI agents and automation.
 
-> *"Data is the new oil — and pandas is how I refine it."*
+## Problem
 
----
+Enterprise security tools are built to monitor human logins. They largely ignore machine credentials: API keys, service accounts, and tokens used by AI agents and automation. These non-human identities now outnumber human employees by a wide margin, yet in most organizations nobody owns them, reviews their permissions, or notices when one is left behind by a project that no longer exists.
 
-## 👋 About Me
+This project simulates the discovery and governance layer that would sit on top of a cloud environment: it ingests a snapshot of identities and their granted permissions, ingests 30 days of activity logs, and evaluates each identity against three security principles — Least Privilege, Segregation of Duties, and Orphan Identity — plus a fourth check, Purpose Boundary, that flags activity outside an identity's registered purpose.
 
-Hi, I'm **Jerome R** — an aspiring **Data Scientist / Analyst** passionate about turning raw data into meaningful insights.
-
-This repository documents my hands-on journey learning **pandas**, one of the most powerful Python libraries for data analysis. Every script here was written, tested, and understood by me — not just copied.
-
----
-
-## 🎯 Why This Project?
-
-As a fresher stepping into the data world, I believe the best way to learn is by **writing real code**. This repo covers the complete pandas workflow — from loading data to cleaning it — the same workflow used by data professionals every day.
-
----
-
-## 📚 What I Learned & Built
-
-| # | Topic | What I Practiced | File |
-|---|-------|-----------------|------|
-| 1 | **Series** | Creating labeled 1D data, loc/iloc indexing, boolean filtering | `series.py` |
-| 2 | **DataFrame** | Building tables, adding columns, filtering rows, concat | `dataframe.py` |
-| 3 | **Importing Data** | Reading CSV & JSON files into DataFrames | `importing.py` |
-| 4 | **Selection** | Selecting rows/columns by label, handling missing keys | `selection.py` |
-| 5 | **Filtering** | Boolean masks, AND/OR conditions on real datasets | `filtering.py` |
-| 6 | **Aggregation** | mean, sum, min, max, groupby — summarizing datasets | `aggregation.py` |
-| 7 | **Data Cleaning** | Handling nulls, removing duplicates, fixing data types | `cleaning.py` |
-
----
-
-## 💡 Key Concepts I Understand
-
-- **`loc` vs `iloc`** — label-based vs position-based indexing
-- **Boolean masking** — the core of pandas filtering
-- **`groupby()`** — splitting data into groups for analysis
-- **`pd.to_numeric(errors='coerce')`** — safely converting messy data
-- **Data cleaning pipeline** — drop → fill → replace → standardize → deduplicate
-
----
-
-## 🔍 Code Highlights
-
-**Filtering students with score ≥ 75 AND age > 20:**
-```python
-result = df[(df["Score"] >= 75) & (df["Age"] > 20)]
-```
-
-**Grouping by department and finding average score:**
-```python
-group = df.groupby("Department")
-print(group["Score"].mean())
-```
-
-**Full data cleaning pipeline:**
-```python
-df["Department"] = df["Department"].replace({"Mech": "Mechanical"})
-df["Department"] = df["Department"].str.lower()
-df["Score"] = pd.to_numeric(df["Score"], errors="coerce")
-df = df.drop_duplicates()
-```
-
----
-
-## 📁 Project Structure
+## Architecture
 
 ```
-pandas-mastery/
-│
-├── series.py           # Pandas Series operations
-├── dataframe.py        # DataFrame creation & manipulation
-├── importing.py        # Reading CSV and JSON files
-├── selection.py        # Row & column selection
-├── filtering.py        # Boolean filtering techniques
-├── aggregation.py      # Aggregation & groupby
-├── cleaning.py         # Data cleaning pipeline
-│
-└── data/
-    ├── data.csv        # Sample student dataset
-    └── data.json       # Sample JSON dataset
+React frontend
+      │  HTTP
+      ▼
+FastAPI backend  (/ingest, /identities, /identities/{id}, /risks)
+      │
+      ▼
+Data loader  →  parses and validates uploaded directory + activity JSON
+      │
+      ▼
+PostgreSQL  →  identities table, activities table (truncated and replaced on each ingest)
+      │
+      ▼
+Risk engine  →  runs on read, not precomputed at ingest time
+      │
+      ▼
+Results returned to dashboard
 ```
 
----
+Risk evaluation is intentionally **not** precomputed and stored. Each time an identity's detail is requested, the risk engine re-runs against the current database state. This keeps the risk logic as a single source of truth used identically by both the list-all endpoint (`/risks`) and the single-identity endpoint (`/identities/{id}`), at the cost of recomputing on every request rather than caching — acceptable at this dataset size, but a real trade-off at scale (see Limitations).
 
-## 🛠️ Tech Stack
+## Tech stack
 
-- **Language:** Python 3.x
-- **Library:** Pandas
-- **Editor:** Visual Studio Code
-- **Version Control:** Git & GitHub
+- **Backend:** Python, FastAPI
+- **Database:** PostgreSQL (via `psycopg2`, parameterized queries)
+- **Frontend:** React (Vite)
+- **No agent framework used** — the task is deterministic rule evaluation over structured data. An LLM/agent framework (e.g. LangGraph) would add latency and non-determinism without improving correctness here, so one was deliberately not used.
 
----
+## Setup
 
-## 🚀 Getting Started
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/JeromeR/pandas-mastery.git
-
-# 2. Navigate into the folder
-cd pandas-mastery
-
-# 3. Install pandas
-pip install pandas
-
-# 4. Run any script
-python cleaning.py
+### Backend
+```
+pip install -r requirements.txt
+```
+Create a `.env` file in the project root:
+```
+DB_NAME=nhi_governance
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=5432
+```
+Run the migration script to create tables, then start the API:
+```
+python migrate_data.py
+uvicorn main:app --reload
 ```
 
----
+### Frontend
+```
+cd frontend
+npm install
+npm run dev
+```
 
-## 📈 My Data Science Roadmap
+## API endpoints
 
-- [x] Python basics
-- [x] Pandas fundamentals
-- [ ] NumPy & data visualization (Matplotlib / Seaborn)
-- [ ] Exploratory Data Analysis (EDA) on real datasets
-- [ ] Machine Learning with Scikit-learn
-- [ ] End-to-end data science project
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/` | Health check |
+| POST | `/ingest` | Upload directory + activity JSON, replaces current dataset |
+| GET | `/identities` | List all identities with orphan status |
+| GET | `/identities/{account_id}` | Full risk analysis for one identity |
+| GET | `/risks` | Risk analysis across all identities |
 
----
+## Risk checks implemented
 
-## 🤝 Let's Connect
+- **Orphan Identity** — flags any identity with no assigned agent (`agent is None`)
+- **Least Privilege** — compares granted permissions against permissions actually exercised in the activity log; flags any granted-but-unused permission
+- **Segregation of Duties** — flags an identity holding both `write:payments` and `approve:payments`
+- **Purpose Boundary** *(beyond the spec's three required checks)* — flags activity on a resource outside the identity's registered purpose
 
-I'm actively looking for **Data Scientist / Analyst** opportunities.
+Each flagged risk includes a plain-language reason, written for a reviewer who has no prior context on the specific identity.
 
-- 📧 Email: your.email@gmail.com
-- 💼 LinkedIn: [linkedin.com/in/jerome-r](https://linkedin.com/in/jerome-r)
-- 🐙 GitHub: [github.com/JeromeR](https://github.com/JeromeR)
+## Design decisions and trade-offs
 
----
+- **Truncate-and-replace on ingest, not append.** Each upload represents "current state" of the environment, matching the assignment's framing of a discovery scan. This means historical scans aren't retained — acceptable for a single-snapshot assessment tool, but would need an append-and-timestamp model for tracking drift over time.
+- **Risk evaluation on read, not precomputed.** Simpler and guarantees consistency between endpoints, at the cost of recomputing per request. Fine at this scale; would need caching or a background job at production scale.
+- **Segregation of Duties is a hardcoded rule**, not a general "any create+approve conflict" engine. It correctly catches the payments scenario in the spec's example but wouldn't generalize to a different resource pair without code changes.
 
-## 📄 License
+## Known limitations
 
-This project is open source under the [MIT License](LICENSE).
+- Purpose Boundary checks only recognize two purposes (`Invoice Processing`, `Generate Reports`); any identity with an unmapped purpose currently has all of its activity flagged, since unmapped purposes default to zero allowed resources.
+- No handling for duplicate `account_id` values within a single upload.
+- No file size limit on uploaded JSON.
+- CORS is currently hardcoded to `localhost:5173` for local development and would need updating for a deployed environment.
+- Ingest validation requires `account_id`, `type`, `purpose`, and `permissions`, but not `agent` — an identity JSON omitting the `agent` key entirely (rather than setting it to `null`) will pass ingest validation but fail during risk evaluation.
 
----
+## Possible next steps
 
-<p align="center">
-  <i>⭐ If this helped you learn pandas too, consider giving it a star!</i>
-</p>
+- Generalize the Segregation of Duties check into a configurable list of conflicting permission pairs
+- Persist scan history to support drift/trend analysis over time instead of only current-state snapshots
+- Add authentication in front of the API before any real deployment
