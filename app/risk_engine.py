@@ -28,7 +28,7 @@ def check_risks(identities, activities, used_permissions):
         granted_permissions = identity["permissions"]
 
         # Orphan Identity
-        if identity["agent"] is None:
+        if identity.get("agent") is None:
             risks.append({
                 "account_id": account_id,
                 "risk_type": "Orphan Identity",

@@ -1,12 +1,15 @@
+import os
+from dotenv import load_dotenv
 import psycopg2
 import psycopg2.extras
 
-# Same connection settings as migrate_data.py
-DB_NAME = "nhi_governance"
-DB_USER = "postgres"
-DB_PASSWORD = "Jerome@9597"
-DB_HOST = "localhost"
-DB_PORT = "5432"
+load_dotenv()
+
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
 
 
 def get_connection():
@@ -21,7 +24,7 @@ def get_connection():
 
 def get_identities():
     conn = get_connection()
-   
+
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     cur.execute("SELECT account_id, type, agent, purpose, permissions FROM identities;")
